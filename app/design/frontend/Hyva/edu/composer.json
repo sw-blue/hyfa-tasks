@@ -1,0 +1,14 @@
+{
+    "name": "hyva/edu-theme",
+    "description": "Hyva Edu Theme",
+    "type": "magento2-theme",
+    "require": {
+        "php": "~7.4.0||~8.1.0",
+        "magento/framework": "*"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ]
+    }
+}
