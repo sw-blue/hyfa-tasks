@@ -32,15 +32,6 @@ $modalViewModel = $viewModels->require(\Hyva\Theme\ViewModel\Modal::class);
 ?>
 
 <script>
-    function deleteItem() {
-        // Add your logic to delete the item from the cart here
-        console.log('Item deleted');
-        // After deleting the item, hide the modal
-        document.querySelector('[x-data]').__x.$data.hide();
-    }
-</script>
-
-<script>
     function initCartDrawer() {
         return {
             open: false,
@@ -250,8 +241,14 @@ $modalViewModel = $viewModels->require(\Hyva\Theme\ViewModel\Modal::class);
                                             <?= $heroicons->pencilHtml('', 20, 20, ['aria-hidden' => 'true']); ?>
                                         </a>
 
-                                        <div
-                                            x-data="hyva.modal()">
+                                        <span
+                                            x-data="{deleteItemAndHide(itemId) {
+                                                this.deleteItemFromCart(itemId);
+
+                                                this.hide();
+                                                },
+                                                ...hyva.modal()
+                                            }">
                                             <button type="button"
                                                     class="inline-flex p-2 btn btn-primary"
                                                     @click="show"
@@ -261,24 +258,28 @@ $modalViewModel = $viewModels->require(\Hyva\Theme\ViewModel\Modal::class);
                                             </button>
 
                                             <?= $modalViewModel->createModal()->withContent(<<<MODAL_CONTENT
-                                                <div class="modal-container" @click.away="hide"
+                                                <div class="modal-container m-4" @click.away="hide"
                                                      x-transition>
                                                      <div id="the-label">{$escaper->escapeHtml(__('You sure want to remove this item from your cart?'))}</div>
-                                                     <div class="mt-20 flex justify-between gap-2">
+                                                     <div class="mt-4 flex justify-between gap-2">
                                                          <button @click="hide" type="button" class="btn">
                                                              {$escaper->escapeHtml(__('Cancel'))}
                                                          </button>
-                                                         <button x-focus-first @click="deleteItem" type="button" class="btn btn-primary bg-red-500 text-white">
+                                                         <button
+                                                            x-focus-first
+                                                            @click="deleteItemAndHide(item.item_id)"
+                                                            type="button"
+                                                            class="btn hover:bg-red-700 bg-red-500 text-white">
                                                              {$escaper->escapeHtml(__('Delete'))}
                                                          </button>
                                                      </div>
                                                 </div>
                                              MODAL_CONTENT
-                                            )->positionBottom()
+                                            )
                                                 ->withAriaLabelledby('the-label')
-                                                ->addDialogClass('border', 'border-10', 'border-blue-800')
+                                                ->overlayDisabled()
                                             ?>
-                                        </div>
+                                        </span>
 
                                     </div>
 
