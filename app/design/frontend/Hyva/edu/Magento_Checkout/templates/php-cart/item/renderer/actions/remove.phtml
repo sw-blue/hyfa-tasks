@@ -28,12 +28,86 @@ if ($item->getProductType() === 'configurable') {
     $productName = $item->getName();
 }
 ?>
+<!--@click.prevent='hyva.postForm(--><?php //= /* @noEscape */ $block->getDeletePostJson() ?><!--)'-->
 <button
-    class="flex action action-delete"
+    @click.prevent="removeItem('<?= $escaper->escapeJs($block->getDeletePostJson()) ?>', '<?= $escaper->escapeHtmlAttr($productName) ?>')"
     x-data="{}"
-    @click.prevent='hyva.postForm(<?= /* @noEscape */ $block->getDeletePostJson() ?>)'
     aria-label="<?= $escaper->escapeHtmlAttr(__('Remove %1', $productName)) ?>"
     type="button"
+    class="flex action action-delete"
 >
     <?= $heroicons->trashHtml('w-6 h-6', 24, 24, ['aria-hidden' => 'true']) ?>
 </button>
+
+<script>
+    function removeItem(deletePostDataJson, productName) {
+        let deletePostData;
+        try {
+            deletePostData = JSON.parse(deletePostDataJson);
+        } catch (e) {
+            console.error('Error parsing deletePostData:', e);
+            window.dispatchMessages([{
+                type: 'error',
+                text: 'Internal error occurred. Please try again later.'
+            }], 5000);
+            return;
+        }
+
+        fetch(deletePostData.action, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: new URLSearchParams({
+                form_key: hyva.getFormKey(),
+                id: deletePostData.data.id,
+                uenc: deletePostData.data.uenc
+            }),
+            method: "POST",
+            mode: "cors",
+            credentials: "include",
+        })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (response.redirected) {
+                    // Handle redirection
+                    // window.location.href = response.url;
+                    return;
+                } else if (response.ok && contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else if (contentType && contentType.includes('text/html')) {
+                    return response.text().then(html => {
+                        console.error('Unexpected HTML response:', html);
+                        throw new Error('Received HTML response instead of JSON');
+                    });
+                } else {
+                    throw new Error('Unexpected response from the server');
+                }
+            })
+            .then(data => {
+                console.log('data', data);
+
+                const linkElement = document.querySelector(`a[title="${productName}"]`);
+                if (linkElement) {
+                    const tbodyElement = linkElement.closest('tbody');
+                    if (tbodyElement) {
+                        tbodyElement.remove();
+                    }
+                }
+
+                window.dispatchMessages([{
+                    type: 'success',
+                    text: `Successfully removed ${productName}`
+                }], 5000);
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                window.dispatchMessages([{
+                    type: 'error',
+                    text: error.message || 'Error removing item'
+                }], 5000);
+            });
+    }
+
+
+</script>
+
